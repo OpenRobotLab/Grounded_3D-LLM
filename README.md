@@ -2,7 +2,7 @@
 
 This repository will release the official implementation of "Grounded 3D-LLM with Referent Token".
 
-> [[`Paper`]]() [[`Website`]](https://groundedscenellm.github.io/grounded_3d-llm.github.io/) [[`Data`]](https://mycuhk-my.sharepoint.com/:f:/g/personal/1155113995_link_cuhk_edu_hk/EpGS4c90LVVMvzio0UXgHfoB1u78-WpYaZfTuJj8qCbC4g?e=B2sufx)
+> [[`Paper`]](https://arxiv.org/pdf/2405.10370) [[`Arxiv`]](https://arxiv.org/abs/2405.10370) [[`Website`]](https://groundedscenellm.github.io/grounded_3d-llm.github.io/) [[`Data`]](https://mycuhk-my.sharepoint.com/:f:/g/personal/1155113995_link_cuhk_edu_hk/EpGS4c90LVVMvzio0UXgHfoB1u78-WpYaZfTuJj8qCbC4g?e=B2sufx)
 
 ## Abstract
 
@@ -14,4 +14,5 @@ Prior studies on 3D scene comprehension have primarily developed specialized mod
 
 - [x] Release Grouded Scene Caption data (ScanNet).
 - [ ] Release data visualizer.
-- [ ] Relase code.
+- [ ] Release data generation code.
+- [ ] Release code.
