@@ -13,4 +13,5 @@ Prior studies on 3D scene comprehension have primarily developed specialized mod
 ## ToDo
 
 - [x] Release Grouded Scene Caption data (ScanNet).
+- [ ] Release data visualizer.
 - [ ] Relase code.
