@@ -6,13 +6,26 @@ This repository will release the official implementation of "Grounded 3D-LLM wit
 
 ## Abstract
 
-Prior studies on 3D scene comprehension have primarily developed specialized models for specific tasks or required task-specific fine-tuning. **In this study, we propose *Grounded 3D-LLM*, which explores the potential of 3D large multi-modal models (LMMs) to consolidate various 3D visual tasks within a unified generative framework.** The model utilizes a series of ``referent tokens'' to reference 3D scenes, enabling the handling of sequences that interleave 3D and textual data arbitrarily. 3D vision tasks are naturally transformed into language formats through task-specific prompts. **To effectively associate the scene with text, we curate the grounded language datasets either from human-annotated sources or by bootstrapping existing object labels at the phrase level. We then employ Contrastive Language-Scene Pre-training (CLASP) to bridge the divide between 3D vision and language models, **thus facilitating the use of referent tokens in subsequent language modeling tasks. Our comprehensive evaluation covers open-ended tasks like 3D visual question answering and dense captioning, as well as close-ended tasks such as object detection and language grounding. We also explore the potential to generate interleaved scene *referents* and textual language outputs for embodied dialogue and planning. Experiments across multiple 3D benchmarks reveal the superior performance and the broad applicability of *Grounded 3D-LLM*. Code and datasets will be made publicly accessible.
+Prior studies on 3D scene comprehension have primarily developed specialized models for specific tasks or required task-specific fine-tuning. In this study, we propose *Grounded 3D-LLM*, which explores the potential of 3D large multi-modal models (LMMs) to consolidate various 3D visual tasks within a unified generative framework. The model utilizes a series of ``referent tokens'' to reference 3D scenes, enabling the handling of sequences that interleave 3D and textual data arbitrarily. 3D vision tasks are naturally transformed into language formats through task-specific prompts. To effectively associate the scene with text, we curate the grounded language datasets either from human-annotated sources or by bootstrapping existing object labels at the phrase level. We then employ Contrastive Language-Scene Pre-training (CLASP) to bridge the divide between 3D vision and language models, thus facilitating the use of referent tokens in subsequent language modeling tasks. Our comprehensive evaluation covers open-ended tasks like 3D visual question answering and dense captioning, as well as close-ended tasks such as object detection and language grounding. 
 
 ![image-20240515195822834](./README.assets/image-20240515195822834.png)
 
-## ToDo
+## Main Results
+
+<p>
+    <img src="./README.assets/results.png" alt="Generalist comparison">
+    <em>Evaluation of 3D scene-level LMMs as a generalist.</em>
+</p>
+
+<p>
+    <img src="./README.assets/result_clasp.png" alt="CLASP comparison">
+    <em>Comparison of CLASP with previous referring and detection methods.</em>
+</p>
+
+## ToDo List
 
 - [x] Release Grouded Scene Caption data (ScanNet).
 - [ ] Release data visualizer.
 - [ ] Release data generation code.
-- [ ] Release code.
+- [ ] Release pre-trained CLASP.
+- [ ] Release Grounded 3D-LLM.
