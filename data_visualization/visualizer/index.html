@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
+  <!-- Replace the content tag with appropriate information -->
+  <meta name="description" content="DESCRIPTION META TAG">
+  <meta property="og:title" content="SOCIAL MEDIA TITLE TAG" />
+  <meta property="og:description" content="SOCIAL MEDIA DESCRIPTION TAG TAG" />
+  <meta property="og:url" content="URL OF THE WEBSITE" />
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
+  <meta property="og:image" content="static/image/your_banner_image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+
+  <meta name="twitter:title" content="TWITTER BANNER TITLE META TAG">
+  <meta name="twitter:description" content="TWITTER BANNER DESCRIPTION META TAG">
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X600-->
+  <meta name="twitter:image" content="static/images/your_twitter_banner_image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- Keywords for your paper to be indexed by-->
+  <meta name="keywords" content="KEYWORDS SHOULD BE PLACED HERE">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    #info {
+      width: 300px;
+      height: 400px;
+      overflow: auto;
+      padding: 10px;
+      font-size: 20px;
+    }
+  </style>
+
+  <title>Grounded 3D-LLM</title>
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+  <script src="https://unpkg.com/three@0.127.0/build/three.module.js"></script>
+</head>
+
+<body>
+
+
+  <section class="hero is-small" id="PointCloudVisualization">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-fullwidth">
+          <h2 class="title is-3">Dataset Visualization</h2>
+        </div>
+      </div>
+    </div>
+
+    </div>
+    <div class="hero-body">
+      <div class="container">
+        <div style="display: flex; margin-top: 20px;">
+          <div style="flex: 3; height: 400px; position: relative;">
+            <div id="pose_loading" style="position: absolute; left: 50%; top: 51.1%;"></div>
+            <canvas id="webgl_output" style="width: 100%; height: 100%;"></canvas>
+          </div>
+          <div id="info" style="flex: 2; font-size: 15px; padding: 10px;">
+            <span style="font-size: 25px; border-color: black;">Loading ...</span>
+          </div>
+        </div>
+
+        <button id="toggleAnimation">Start Rotation</button>
+        <button id="show_instance">Show Instances</button>
+      </div>
+    </div>
+  </section>
+</body>
+
+<script type="module">
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.114.0/build/three.module.js';
+  import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.114.0/examples/jsm/controls/OrbitControls.js';
+  import { PLYLoader } from 'https://cdn.jsdelivr.net/npm/three@0.114.0/examples/jsm/loaders/PLYLoader.js';
+
+  let loader = new PLYLoader();
+
+  let scene = new THREE.Scene();
+  let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  let canvas1 = document.querySelector('#webgl_output'); // Make sure this selector is correct
+  let canvas2 = document.querySelector('#webgl_output_dataset'); // Make sure this selector is correct
+  let renderer = new THREE.WebGLRenderer({
+    canvas: canvas1,
+    alpha: true,
+    antialias: true
+  });
+  renderer.setClearColor(0xffffff, 1); // Ensure white background with full opacity
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio * 2, 50)); // Adjust pixel ratio for high resolution
+  camera.position.y = 4;
+  let light = new THREE.AmbientLight(0x404040); // Example light
+  scene.add(light);
+  // let grid1 = new THREE.GridHelper(30, 30);
+  // scene.add(grid1);
+
+  let animateId = null;
+  let isAnimating = false;
+  let isRaw = true
+
+
+  function animate() {
+
+    animateId = requestAnimationFrame(animate);
+
+    // Rotate the camera only if isAnimating is true
+    if (isAnimating) {
+      var time = Date.now() * 0.001; // current time in seconds
+      camera.position.x = Math.sin(time) * 2; // 10 is the radius of the orbit
+      camera.position.z = Math.cos(time) * 2;
+      camera.lookAt(scene.position);
+    }
+    renderer.clear(); // Clear the canvas before rendering the scene
+    renderer.render(scene, camera);
+  }
+
+  // Start the animation loop
+  animate();
+
+  // Listen for button clicks to toggle animation
+  document.getElementById('toggleAnimation').addEventListener('click', function () {
+    isAnimating = !isAnimating; // Toggle the isAnimating state
+
+    // Update button text based on the animation state
+    if (isAnimating) {
+      this.textContent = 'Pause Rotation';
+      if (!animateId) {
+        animate(); // Restart animation if it was paused
+      }
+    } else {
+      this.textContent = 'Resume Rotation';
+      renderer.setAnimationLoop(() => {
+        renderer.clear(); // Clear the canvas before rendering the scene
+        renderer.render(scene, camera);
+      });
+    }
+  });
+
+  document.getElementById('show_instance').addEventListener('click', function () {
+    isRaw = !isRaw; // Toggle the isRaw state
+    loadPointCloud('assets/scene_to_load',isRaw)
+    // Update button text based on the animation state
+    if (isRaw) {
+      this.textContent = 'Show Instances';
+      if (!animateId) {
+        animate(); // Restart animation if it was paused
+      }
+    } else {
+      this.textContent = 'Show Raw Point Clouds';
+      renderer.setAnimationLoop(() => {
+        renderer.clear(); // Clear the canvas before rendering the scene
+        renderer.render(scene, camera);
+      });
+    }
+  });
+
+  async function loadPointCloud(rootDirectory, loadInstanceRaw) {
+    scene.children = scene.children.filter(child => !(child instanceof THREE.Points));
+    const instanceFilename = loadInstanceRaw ? 'instance_raw.ply' : 'instance_color.ply';
+
+    fetch('assets/info.json')
+      .then(response => response.json())
+      .then(data => {
+        // Extract necessary data from the response
+
+        const text = data["text"];
+        console.info(text)
+        document.getElementById("info").innerHTML = text;
+      })
+      .catch(error => {
+        console.error('Error fetching JSON:', error);
+      });
+
+
+    try {
+      const geometry = await new Promise((resolve, reject) => {
+        loader.load(rootDirectory + '/' + instanceFilename, resolve, undefined, reject);
+      });
+      geometry.computeVertexNormals();
+
+      const pointsMaterial = new THREE.PointsMaterial({
+        size: 0.08,
+        vertexColors: true,
+        color: 0xffffff
+      });
+      const points = new THREE.Points(geometry, pointsMaterial);
+      points.rotation.x = -Math.PI / 2;
+      points.name = 'instance';
+      scene.add(points);
+      console.log(instanceFilename + ' loaded');
+    } catch (error) {
+      console.log('An error happened while loading ' + instanceFilename + ':', error);
+    }
+  }
+
+
+  let controls1 = new OrbitControls(camera, canvas1)
+  controls1.enableZoom = true
+  // controls2.enableDamping = true
+  controls1.object.position.set(camera.position.x, camera.position.y, camera.position.z)
+  controls1.target = new THREE.Vector3(0, 0, 0)
+  controls1.update()
+
+  loadPointCloud('assets/scene_to_load', true); // Load the first point cloud by default
+
+  console.log("Script loaded and executing.");
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth * 0.7, 400);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  });
+</script>
+
+</html>

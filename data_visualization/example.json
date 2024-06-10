@@ -1,0 +1,146 @@
+{
+    "scene_id": "scene0619_00",
+    "caption": "In a modern office space, a black desk holds a black computer tower with a silver front panel, accompanied by a black flat-panel monitor above it. Nearby, a light gray file cabinet stands with the black computer tower on its right side, while a flat-screen monitor is positioned close by. Adjacent to the file cabinet, a dark backpack rests, and a shelf with various items is nearby. On the floor, a black shoe is visible, along with three brown cardboard boxes. One box is placed slightly higher on the shelf. Another area features a slim desk with a modern flat-screen monitor, a black keyboard, and a glossy black circular mouse. Positioned above the desk is a cream-colored corded telephone with an elongated receiver. Not far away, a metallic multi-tiered shelf holds a wide-brimmed brown hat, a rectangular brown cardboard box, and a green and white illustrated box. Additionally, a white paper sheet is placed on the desk, and two brown cardboard boxes are on the floor near a dark backpack.",
+    "caption_positive": {
+        "6": [
+            [
+                28,
+                38
+            ]
+        ],
+        "0": [
+            [
+                47,
+                67
+            ],
+            [
+                197,
+                217
+            ]
+        ],
+        "7": [
+            [
+                110,
+                136
+            ]
+        ],
+        "3": [
+            [
+                157,
+                180
+            ]
+        ],
+        "12": [
+            [
+                243,
+                264
+            ]
+        ],
+        "13": [
+            [
+                321,
+                334
+            ],
+            [
+                982,
+                997
+            ]
+        ],
+        "4": [
+            [
+                348,
+                353
+            ]
+        ],
+        "10": [
+            [
+                398,
+                410
+            ]
+        ],
+        "14": [
+            [
+                434,
+                461
+            ],
+            [
+                934,
+                959
+            ]
+        ],
+        "15": [
+            [
+                434,
+                461
+            ],
+            [
+                934,
+                959
+            ]
+        ],
+        "18": [
+            [
+                434,
+                461
+            ],
+            [
+                799,
+                832
+            ]
+        ],
+        "20": [
+            [
+                533,
+                544
+            ]
+        ],
+        "8": [
+            [
+                550,
+                578
+            ]
+        ],
+        "23": [
+            [
+                580,
+                596
+            ]
+        ],
+        "22": [
+            [
+                602,
+                631
+            ]
+        ],
+        "16": [
+            [
+                662,
+                721
+            ]
+        ],
+        "9": [
+            [
+                739,
+                766
+            ]
+        ],
+        "17": [
+            [
+                773,
+                797
+            ]
+        ],
+        "19": [
+            [
+                838,
+                871
+            ]
+        ],
+        "21": [
+            [
+                887,
+                906
+            ]
+        ]
+    }
+}
