@@ -2,52 +2,20 @@ import numpy as np
 import json
 from plyfile import PlyData, PlyElement
 
-# Function to read PLY file
-def read_ply(file_path):
-    ply = PlyData.read(file_path)
-    data = ply.elements[0].data
-    vertices = np.array([list(vertex) for vertex in data])
-    return vertices[:,:6]
-
-# Function to read JSON file
-def read_json(file_path):
-    with open(file_path, 'r') as f:
-        data = json.load(f)
-    return data
-
 # Generate a unique color for each instance
 def generate_colors(num_colors):
     colors = np.random.rand(num_colors, 3)
     return colors
 
 # Function to color the point cloud based on instance segmentation
-def colorize_point_cloud(vertices, seg_data, instance_data):
-    num_instances = len(instance_data['segGroups'])
-    colors = generate_colors(num_instances)
-    
-    instance_colors = {}
-    for i, group in enumerate(instance_data['segGroups']):
-        instance_colors[group['objectId']] = colors[i]
-    
-    seg_indices = seg_data['segIndices']
+def colorize_point_cloud(vertices, labels):
+    colors = generate_colors(max(labels)+1)
     colored_vertices = []
-    
     for i in range(len(vertices)):
-        seg_index = seg_indices[i]
-        instance_id = None
-        for group in instance_data['segGroups']:
-            if seg_index in group['segments']:
-                instance_id = group['objectId']
-                break
+        color = colors [labels[i]]
+        colored_vertices.append(np.hstack((vertices[i], color)))
 
-        if instance_id is not None:
-            color = instance_colors[instance_id]
-        else:
-            color = [0, 0, 0]  # Default color if no instance is found
-            continue
-        colored_vertices.append(np.hstack((vertices[i][:3], color)))
-
-    return np.array(colored_vertices), instance_colors
+    return np.array(colored_vertices), colors 
 
 def clamp_color_value(value):
     return max(0, min(255, int(value*255)))
@@ -71,7 +39,7 @@ def generate_colored_caption(caption, caption_positive, instance_colors):
     # print(caption_positive)
     # Process each segment
     for obj_id, segments in caption_positive.items():
-        color = instance_colors.get(int(obj_id), [0, 0, 0])
+        color = instance_colors[obj_id]# .get(int(obj_id), [0, 0, 0])
         color_str = f"rgb({int(color[0] * 255)}, {int(color[1] * 255)}, {int(color[2] * 255)})"
 
         for start, end in segments:

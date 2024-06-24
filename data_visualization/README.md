@@ -1,14 +1,12 @@
 # Instructions for Visualizing Grounded Caption
 
-1. **Customize Data Path**: Update the root directory path in `visualize_grounded_text.py` to point to your ScanNet raw data location and path to captions:
-   ```sh
-   mkdir data
-   ln -s RAW_SCANNET/ data/rawscannet
-   ```
-   
+1. **Download Processed ScanNet Data and Language Annotation**: 
+
+   https://huggingface.co/datasets/ShuaiYang03/Grounded_3D_LLM_with_Referent_Tokens_dataset
+
 2. **Run the Visualization Script**:
    ```sh
-   python visualize_grounded_text.py --datapath ../data/rawscannet/ --langpath ../data/langdata/groundedscenecaption_format.json --count 10 --scene_id scene0000_00
+   python visualize_grounded_text.py --datapath ../data/processed/scannet200 --langpath ../data/langdata/groundedscenecaption_format.json --count 10 --scene_id scene0000_00
    ```
 
 3. **Launch Visualizer Server**:

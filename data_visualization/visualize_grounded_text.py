@@ -5,17 +5,17 @@ import numpy as np
 import shutil
 from plyfile import PlyData, PlyElement
 from copy import deepcopy
-
-from utils import read_ply, read_json, colorize_point_cloud, save_colored_ply, generate_colored_caption
+from glob import glob
+from utils import colorize_point_cloud, save_colored_ply, generate_colored_caption
 
 parser = argparse.ArgumentParser(description='Visualize the grounded scene caption data.')
-parser.add_argument('--datapath', default='../data/rawscannet/')
+parser.add_argument('--datapath', default='../data/processed/scannet200')
 parser.add_argument('--langpath', default='../data/langdata/groundedscenecaption_format.json', help='the json path of grounded scene caption')
 parser.add_argument('--count', default=10, type=int, help='numbers of captions for visualizations')
 parser.add_argument('--scene_id', default='scene0000_00', type=str, help='scene id for visualization')
 args = parser.parse_args()
 
-datapath = os.path.join(args.datapath, 'scans')
+datapath = args.datapath
 demo = json.load(open(args.langpath))
 captions = []
 caption_positives = []
@@ -36,24 +36,25 @@ for i in demo:
 
 # =============================================================
 
-point_cloud_path = f'{datapath}/{args.scene_id}/{args.scene_id}_vh_clean_2.ply'
-vertices = read_ply(point_cloud_path)
+point_cloud_paths = glob(f'{datapath}/*/*.npy')
+for path in point_cloud_paths:
+    if args.scene_id.replace("scene","") in path:
+        points = np.load(path)
+        break
 
-print(f"Point cloud ({args.scene_id}) loaded: shape of {vertices.shape}")
-
-# Example usage
-seg_path = f'{datapath}/{args.scene_id}/{args.scene_id}_vh_clean_2.0.010000.segs.json'
-instance_path = f'{datapath}/{args.scene_id}/{args.scene_id}_vh_clean.aggregation.json'
-
-seg_data = read_json(seg_path)
-instance_data = read_json(instance_path)
-print("Segmentation and instance data loaded.")
+coordinates, color, normals, segments, labels = (
+              points[:, :3],
+              points[:, 3:6],
+              points[:, 6:9],
+              points[:, 9],
+              points[:, 10:12],
+          )
 
 # save raw point cloud color
-shutil.copy(point_cloud_path,'./visualizer/assets/scene_to_load/instance_raw.ply')
+save_colored_ply(np.concatenate((coordinates, color/255),axis = -1),'./visualizer/assets/scene_to_load/instance_raw.ply')
 
 # save instance color
-colored_vertices, instance_colors = colorize_point_cloud(vertices, seg_data, instance_data)
+colored_vertices, instance_colors = colorize_point_cloud(coordinates, np.int32(labels[:,-1]))
 save_colored_ply(colored_vertices, './visualizer/assets/scene_to_load/instance_color.ply')
 
 combined_cap = ""
