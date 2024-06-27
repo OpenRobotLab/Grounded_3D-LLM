@@ -32,6 +32,8 @@ pip install -r requirements.txt
 
 #### Step 2: Data preparation
 
+You can download processed ScanNet(~7G) from [our Huggingface repository]( https://huggingface.co/datasets/ShuaiYang03/Grounded_3D_LLM_with_Referent_Tokens_dataset) or prepare it by yourself.
+
 1. Download the ScanNet dataset from the official [ScanNet website](http://www.scan-net.org/).
 ```bash
 ln -s ScanNet_dataset ./data/rawscannet
@@ -71,7 +73,7 @@ After preprocessing, please download the [grounded scene caption data](https://m
 1. Run the visualization script to generate colorful point clouds. 
 ```bash
 cd data_visualization
-python visualize_grounded_text.py --datapath ../data/rawscannet/ --langpath ../data/langdata/groundedscenecaption_format.json --count 10 --scene_id scene0000_00
+python visualize_grounded_text.py --datapath ../data/processed/scannet200 --langpath ../data/langdata/groundedscenecaption_format.json --count 10 --scene_id scene0000_00
 ```
 This command accepts raw point cloud data and language annotations, displaying 10 captions in the scene `scene0000_00`.
 
