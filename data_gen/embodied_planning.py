@@ -1,11 +1,12 @@
 import random
 import json
+from tqdm import tqdm
 from data_utils import generate_chat_completion,parallel_helper
 import argparse
+from copy import deepcopy
 import os
 
 global save_root,grounded_scene_caption,num_threads,num_of_samples
-
 
 prompt = '''Given a local scene caption with object IDs, you are tasked with creating a JSON dictionary containing 2-4 high-level tasks for the robot assistant. Each task should include a clear, concise step-by-step plan using the objects identified in the scene. 
 Rules:
@@ -18,8 +19,6 @@ Rules:
 4. Do not add any objects or details not mentioned in the scene caption.
 '''
 
-max_num_of_class = 20
-from tqdm import tqdm
 def process(raw_data, rank):
     counter = 0
     out_json = []
@@ -63,8 +62,8 @@ def process(raw_data, rank):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="script for embodied planning")
-    parser.add_argument("--save_root", type=str, default="./plan", help="Path to save save_root directory")
-    parser.add_argument("--grounded_scene_caption", type=str, default="step2_captions_by_scene_v2.json", help="Path to grounded scene caption(by scene) file")
+    parser.add_argument("--save_root", type=str, default="./data_gen/embodied_planning", help="Path to save save_root directory")
+    parser.add_argument("--grounded_scene_caption", type=str, default="./data_gen/step2_captions_by_scene_v2.json", help="Path to grounded scene caption(by scene) file")
     parser.add_argument("--num_threads", type=int, default=1, help="Number of threads to call api")
     parser.add_argument("--num_of_samples", type=int, default=10, help="Number of samples to generate")
 
@@ -77,7 +76,7 @@ if __name__ == "__main__":
     num_threads = args.num_threads
     num_of_samples = args.num_of_samples
 
-    with open("step2_captions_by_scene_v2.json",'r') as f:
+    with open(grounded_scene_caption,'r') as f:
         data_list = json.load(f)
 
     all_data = []
@@ -92,5 +91,4 @@ if __name__ == "__main__":
     parallel_helper(num_threads=num_threads,
                     data_list=data_list,
                     func=process)
-
 

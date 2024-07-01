@@ -83,11 +83,14 @@ cd visualizer
 python -m http.server 7890
 ```
 
-## ToDo List
+## Instruction data generation for Embodied Dialogue and Planning
+Please follow the README instructions in the data_gen/ folder to obtain embodied dialogue and planning data with grounding annotation.
+
+## ToDo List (Stay tuned)
 
 - [x] Release Grouded Scene Caption data (ScanNet).
 - [x] Release data visualizer.
-- [x] Release data generation code. (please follow the instructions in data_gen folder)
+- [x] Release data generation code. 
 - [ ] Release pre-trained CLASP.
 - [ ] Release Grounded 3D-LLM.
 

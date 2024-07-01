@@ -2,9 +2,9 @@ from data_utils import parse_phrase_ids
 from tqdm import tqdm
 import json
 
-path = ["dialog/0_10_complete.json"]
+path = ["./data_gen/embodied_dialog/0_10_complete.json"]
 
-with open("all_objects_by_scene.json",'r') as f:
+with open("./data_gen/all_objects_by_scene.json",'r') as f:
     all_objects_by_scene = json.load(f)
 
 data = []
@@ -86,6 +86,6 @@ for dia in tqdm(out_json):
         print(e)
         print(dia)
 
-with open("embodied_dialog.json",'w') as f:
+with open("./data_gen/embodied_dialog.json",'w') as f:
     json.dump(mark,f,indent=4)
 
