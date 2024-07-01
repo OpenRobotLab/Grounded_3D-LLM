@@ -87,7 +87,7 @@ python -m http.server 7890
 
 - [x] Release Grouded Scene Caption data (ScanNet).
 - [x] Release data visualizer.
-- [ ] Release data generation code.
+- [x] Release data generation code. (please follow the instructions in data_gen folder)
 - [ ] Release pre-trained CLASP.
 - [ ] Release Grounded 3D-LLM.
 
