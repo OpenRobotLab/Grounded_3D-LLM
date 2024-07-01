@@ -4,8 +4,9 @@ from tqdm import tqdm
 from data_utils import generate_chat_completion,parallel_helper
 import argparse
 from copy import deepcopy
-global save_root,grounded_scene_caption,num_threads,num_of_samples
 import os
+
+global save_root,grounded_scene_caption,num_threads,num_of_samples
 
 prompt = '''Given a local scene caption with object IDs, you are tasked with creating a dialogue with 3-5 rounds between a user and a robot assistant. The dialogue can include the following contents:
 - {}
@@ -67,8 +68,8 @@ def process(raw_data, rank):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="script for embodied dialogue")
-    parser.add_argument("--save_root", type=str, default="./dialog", help="Path to save root directory")
-    parser.add_argument("--grounded_scene_caption", type=str, default="step2_captions_by_scene_v2.json", help="Path to grounded scene caption(by scene) file")
+    parser.add_argument("--save_root", type=str, default="./data_gen/embodied_dialog", help="Path to save root directory")
+    parser.add_argument("--grounded_scene_caption", type=str, default="./data_gen/step2_captions_by_scene_v2.json", help="Path to grounded scene caption(by scene) file")
     parser.add_argument("--num_threads", type=int, default=1, help="Number of threads to call api")
     parser.add_argument("--num_of_samples", type=int, default=10, help="Number of samples to generate")
 

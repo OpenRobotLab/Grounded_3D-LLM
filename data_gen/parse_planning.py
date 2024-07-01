@@ -2,9 +2,9 @@ from data_utils import parse_phrase_ids
 from tqdm import tqdm
 import json
 
-path = ["plan/0_10_complete.json"]
+path = ["./data_gen/embodied_planning/0_10_complete.json"]
 
-with open("all_objects_by_scene.json",'r') as f:
+with open("./data_gen/all_objects_by_scene.json",'r') as f:
     all_objects_by_scene = json.load(f)
 
 data = []
@@ -78,5 +78,5 @@ for k in out_json:
 
 print(f"number of plans: {count}")
 
-with open("embodied_planning.json",'w') as f:
+with open("./data_gen/embodied_planning.json",'w') as f:
     data = json.dump(out_json,f,indent=4)
