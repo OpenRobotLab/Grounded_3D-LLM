@@ -4,8 +4,8 @@
 
 Download the necessary raw processed data files and place them in the data_gen/data_gen folder:
 
-- [all_objects_by_scene.json](https://huggingface.co/datasets/ShuaiYang03/Grounded_3D_LLM_with_Referent_Tokens_Dataset/blob/main/raw_langdata/all_objects_by_scene.json): All object information (with object-level caption) in each scene.
-- [step2_captions_by_scene_v2.json](https://huggingface.co/datasets/ShuaiYang03/Grounded_3D_LLM_with_Referent_Tokens_Dataset/blob/main/raw_langdata/step2_captions_by_scene_v2.json): The raw step-by-step generated scene captions for groundedscenecaption_format.json.
+- [all_objects_by_scene.json](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/raw_langdata/all_objects_by_scene.json): All object information (with object-level caption) in each scene.
+- [step2_captions_by_scene_v2.json](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/raw_langdata/step2_captions_by_scene_v2.json): The raw step-by-step generated scene captions for groundedscenecaption_format.json.
 
 ## 2. Configure your OpenAI API key and model.
 

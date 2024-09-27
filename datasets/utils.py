@@ -4,7 +4,51 @@ import torch
 from random import random
 
 from transformers import AutoTokenizer, BertConfig
-tokenizer = AutoTokenizer.from_pretrained("./checkpoints/bert-base-uncased", model_max_length=256)
+
+
+class batch_lang_data:
+    def __init__(self,
+                 batch_concat_texts=[],
+                 tokenized=None,
+                 batch_num_concat_texts=None,
+                 raw_phrases=None,
+                 flatten_lang_token_inst_id_pairs=None,
+                 raw_lang_types=None,
+                 concat_lang_positive_maps=None,
+                 unflatten_lang_token_inst_id_pairs=None):
+
+        # extra_query_texts
+        self.batch_concat_texts = batch_concat_texts
+        self.tokenized = tokenized
+        self.batch_num_concat_texts = batch_num_concat_texts
+        self.raw_phrases = raw_phrases
+        self.flatten_lang_token_inst_id_pairs = flatten_lang_token_inst_id_pairs
+        self.raw_lang_types = raw_lang_types
+
+        # extra_instance_masks
+        self.concat_lang_positive_maps = concat_lang_positive_maps
+        self.unflatten_lang_token_inst_id_pairs = unflatten_lang_token_inst_id_pairs
+
+    def __len__(self):
+        return len(self.batch_concat_texts)
+
+    def print(self):
+        print('extra_query_texts:')
+        print(f'- batch_concat_texts: [{len(self.batch_concat_texts)}, str]')
+        print(f'- tokenized: {list(self.tokenized.input_ids.shape)}')
+        print(f'- batch_num_concat_texts = {self.batch_num_concat_texts}')
+        print(
+            f'- raw_phrases: [{len(self.raw_phrases)}, str] = shape of {[(len(i), str) for i in self.raw_phrases]}')
+        print(
+            f'- flatten_lang_token_inst_id_pairs: [{len(self.flatten_lang_token_inst_id_pairs)}, ?] = shape of {[(len(i), "?", 2) for i in self.flatten_lang_token_inst_id_pairs]}')
+        print(
+            f'- raw_lang_types: [{len(self.raw_lang_types)}, ?] = shape of {[len(i) for i in self.raw_lang_types]}')
+        print('extra_instance_masks:')
+        print(
+            f'- concat_lang_positive_maps: [{len(self.concat_lang_positive_maps)}, ?] = shape of {[list(i.shape) for i in self.concat_lang_positive_maps]}')
+        print(
+            f'- unflatten_lang_token_inst_id_pairs: [{len(self.unflatten_lang_token_inst_id_pairs)}, ?] = shape of {[i.shape for i in self.unflatten_lang_token_inst_id_pairs]}')
+
 
 class VoxelizeCollate:
     def __init__(
@@ -18,10 +62,10 @@ class VoxelizeCollate:
         label_offset=0,
         num_queries=None,
         sample_class_labels=False,
+        bert_path="./bert-base-uncased"
     ):
         assert task in [
             "instance_segmentation",
-            "semantic_segmentation",
         ], "task not known"
         self.task = task
         self.filter_out_classes = filter_out_classes
@@ -33,6 +77,8 @@ class VoxelizeCollate:
 
         self.num_queries = num_queries
         self.sample_class_labels = sample_class_labels
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            bert_path, model_max_length=256)
 
     def __call__(self, batch):
         return voxelize(
@@ -45,6 +91,7 @@ class VoxelizeCollate:
             filter_out_classes=self.filter_out_classes,
             label_offset=self.label_offset,
             num_queries=self.num_queries,
+            tokenizer=self.tokenizer,
             sample_class_labels=self.sample_class_labels,
         )
 
@@ -59,6 +106,7 @@ def voxelize(
     filter_out_classes,
     label_offset,
     num_queries,
+    tokenizer,
     sample_class_labels=False,
 ):
     (
@@ -141,7 +189,7 @@ def voxelize(
 
         if "labels" in input_dict:
             for i in range(len(input_dict["labels"])):
-                if input_dict["labels"][i].shape[1] > 2: # no segment
+                if input_dict["labels"][i].shape[1] > 2:  # no segment
                     # TODO BIGGER CHANGE CHECK!!!
                     _, ret_index, ret_inv = np.unique(
                         input_dict["labels"][i][:, 2],
@@ -198,98 +246,116 @@ def voxelize(
                     extra_qa=extra_qa,
                 )
 
-                if len(extra_lang) > 0:
-                    # num_valid_labels = [t['labels'].shape[0] for t in target]
-                    num_sentenses_batch = [len(lang_bid.concat_texts) for lang_bid in extra_lang]
-                    
-                    # batch data
-                    lang_batch = [i for lang_bid in extra_lang for i in lang_bid.concat_texts]
+                batch_num_concat_texts = [
+                    len(lang_bid.concat_texts) for lang_bid in extra_lang]
+                batch_concat_texts = [
+                    i for lang_bid in extra_lang for i in lang_bid.concat_texts]
 
-                    lang_positive_maps = [None] * len(extra_lang)
-                    lang_phrases_batch = [[]] * len(extra_lang)
-                    batch_lang_token_inst_id_pairs = [None] * len(extra_lang)
-                    batch_raw_texts_to_pos_token_ids = [None] * len(extra_lang)
-                    batch_raw_texts_types = [None] * len(extra_lang)
+                concat_lang_positive_maps = [None] * len(extra_lang)
+                raw_phrases = [[]] * len(extra_lang)
+                unflatten_lang_token_inst_id_pairs = [None] * len(extra_lang)
+                flatten_lang_token_inst_id_pairs = [None] * len(extra_lang)
+                raw_lang_types = [None] * len(extra_lang)
 
-                    if len(lang_batch) != 0:
-                        tokenized = tokenizer(lang_batch, padding='longest', truncation=True, return_tensors='pt')
-                        num_max_tokens = np.asarray(tokenized.input_ids).shape[1]
-                        
-                        total_concat_texts = 0
-                        for bid in range(len(extra_lang)):
-                            lang_positive_map = [] 
-                            token_inst_id_pairs = []
-                            raw_texts_to_pos_token_ids = []
-                            raw_lang_type = []
-                            
-                            for lang_id, (gt_inst_ids, positives) in enumerate(zip(\
-                                    extra_lang[bid].concat_gt_insts, extra_lang[bid].concat_positives)):
-                                assert len(gt_inst_ids) == len(positives)
+                if len(batch_concat_texts) != 0:
+                    tokenized = tokenizer(
+                        batch_concat_texts, padding='longest', truncation=True, return_tensors='pt')
+                    num_max_tokens = np.asarray(tokenized.input_ids).shape[1]
 
-                                raw_texts_to_pos_token_ids.append([])
-                                raw_lang_type.append(extra_lang[bid].concat_types[lang_id])
+                    total_concat_texts = 0
+                    for bid in range(len(extra_lang)):
+                        each_lang_positive_map = []
+                        lang_token_inst_id_pairs = []
+                        raw_lang_token_inst_id_pairs = []
+                        raw_lang_type = []
 
-                                positives = np.asarray(positives).astype(int)
-                                if len(positives) == 0: 
-                                    continue
-                                assert np.all(positives[0, 0] == positives[:, 0]) # assume concat_text_id are same
+                        for lang_id, (gt_inst_ids, positives) in enumerate(zip(
+                                extra_lang[bid].concat_gt_insts, extra_lang[bid].concat_positives)):
+                            assert len(gt_inst_ids) == len(positives)
 
-                                for gt_inst_ids_per_phrase, (concat_text_id, beg, end) in zip(gt_inst_ids, positives):
-                                    try:
-                                        beg_token = tokenized.char_to_token(total_concat_texts + concat_text_id, beg)
-                                        end_token = tokenized.char_to_token(total_concat_texts + concat_text_id, end)
-                                        if beg_token is None:
-                                            try:
-                                                beg_token = tokenized.char_to_token(total_concat_texts + concat_text_id, beg + 1)
-                                                if beg_token is None:
-                                                    beg_token = tokenized.char_to_token(total_concat_texts + concat_text_id, beg + 2)
-                                            except:
-                                                beg_token = None
-                                        if end_token is None:
-                                            try:
-                                                end_token = tokenized.char_to_token(total_concat_texts + concat_text_id, end + 1)
-                                                if end_token is None:
-                                                    end_token = tokenized.char_to_token(total_concat_texts + concat_text_id, end + 2)
-                                            except:
-                                                end_token = None
-                                        if beg_token is None or end_token is None: # If no beg/end token is found, then ignore this one
-                                            continue
-                                    except:
+                            raw_lang_token_inst_id_pairs.append([])
+                            raw_lang_type.append(
+                                extra_lang[bid].concat_types[lang_id])
+
+                            positives = np.asarray(positives).astype(int)
+                            if len(positives) == 0:
+                                continue
+                            # assume concat_text_id are same
+                            assert np.all(positives[0, 0] == positives[:, 0])
+
+                            for inst_ids_per_phrase, (concat_text_id, beg, end) in zip(gt_inst_ids, positives):
+                                try:
+                                    beg_token = tokenized.char_to_token(
+                                        total_concat_texts + concat_text_id, beg)
+                                    end_token = tokenized.char_to_token(
+                                        total_concat_texts + concat_text_id, end)
+                                    if beg_token is None:
+                                        try:
+                                            beg_token = tokenized.char_to_token(
+                                                total_concat_texts + concat_text_id, beg + 1)
+                                            if beg_token is None:
+                                                beg_token = tokenized.char_to_token(
+                                                    total_concat_texts + concat_text_id, beg + 2)
+                                        except:
+                                            beg_token = None
+                                    if end_token is None:
+                                        try:
+                                            end_token = tokenized.char_to_token(
+                                                total_concat_texts + concat_text_id, end + 1)
+                                            if end_token is None:
+                                                end_token = tokenized.char_to_token(
+                                                    total_concat_texts + concat_text_id, end + 2)
+                                        except:
+                                            end_token = None
+                                    if beg_token is None or end_token is None:  # If no beg/end token is found, then ignore this one
                                         continue
-                                    
-                                    lang_positive_map_i = torch.zeros((num_sentenses_batch[bid], num_max_tokens), dtype=bool) # all texts
-                                    lang_positive_map_i[concat_text_id, beg_token:end_token] = 1
+                                except:
+                                    continue
 
-                                    lang_positive_map.append(lang_positive_map_i)
-                                    lang_phrases_batch[bid].append(lang_batch[total_concat_texts + concat_text_id][beg:end])
+                                lang_positive_map_i = torch.zeros(
+                                    (batch_num_concat_texts[bid], num_max_tokens), dtype=bool)  # all texts
+                                lang_positive_map_i[concat_text_id,
+                                                    beg_token:end_token] = 1
 
-                                    pairs = []
-                                    for inst_id in gt_inst_ids_per_phrase:
-                                        if inst_id is None:
-                                            continue
-                                        pairs.append( (len(lang_positive_map)-1, inst_id) )
-                                    token_inst_id_pairs.extend( pairs )
-                                    raw_texts_to_pos_token_ids[-1].extend( pairs )
-                            
-                            if len(lang_positive_map) > 0:
-                                lang_positive_maps[bid] = torch.stack(lang_positive_map, dim=-1)
-                            else:
-                                lang_positive_maps[bid] = torch.zeros([num_sentenses_batch[bid], num_max_tokens, 0], dtype=bool)
-                            batch_lang_token_inst_id_pairs[bid] = np.asarray(token_inst_id_pairs)
-                            batch_raw_texts_to_pos_token_ids[bid] = raw_texts_to_pos_token_ids
-                            batch_raw_texts_types[bid] = raw_lang_type
+                                each_lang_positive_map.append(
+                                    lang_positive_map_i)
+                                raw_phrases[bid].append(
+                                    batch_concat_texts[total_concat_texts + concat_text_id][beg:end])
 
-                            total_concat_texts += num_sentenses_batch[bid]
-                        
-                        new_extra_lang = ((lang_batch, tokenized, num_sentenses_batch, lang_phrases_batch, batch_raw_texts_to_pos_token_ids, batch_raw_texts_types),\
-                                           (lang_positive_maps, batch_lang_token_inst_id_pairs))
-                    else:
-                        new_extra_lang = (None, None)
-                    
-                    extra_lang = new_extra_lang
+                                pairs = []
+                                for inst_id in inst_ids_per_phrase:
+                                    if inst_id is None:
+                                        continue
+                                    pairs.append(
+                                        (len(each_lang_positive_map)-1, inst_id))
+                                lang_token_inst_id_pairs.extend(pairs)
+                                raw_lang_token_inst_id_pairs[-1].extend(pairs)
+
+                        if len(each_lang_positive_map) > 0:
+                            concat_lang_positive_maps[bid] = torch.stack(
+                                each_lang_positive_map, dim=-1)
+                        else:
+                            concat_lang_positive_maps[bid] = torch.zeros(
+                                [batch_num_concat_texts[bid], num_max_tokens, 0], dtype=bool)
+                        unflatten_lang_token_inst_id_pairs[bid] = np.asarray(
+                            lang_token_inst_id_pairs)
+                        flatten_lang_token_inst_id_pairs[bid] = raw_lang_token_inst_id_pairs
+                        raw_lang_types[bid] = raw_lang_type
+
+                        total_concat_texts += batch_num_concat_texts[bid]
+
+                    assert np.all(batch_num_concat_texts[0] == np.asarray(
+                        batch_num_concat_texts[0:]))
+                    extra_lang = batch_lang_data(
+                        batch_concat_texts, tokenized, batch_num_concat_texts, raw_phrases, flatten_lang_token_inst_id_pairs, raw_lang_types,
+                        concat_lang_positive_maps, unflatten_lang_token_inst_id_pairs,
+                    )
+                else:
+                    extra_lang = batch_lang_data()
 
                 for i in range(len(target)):
-                    target[i]["point2segment"] = input_dict["labels"][i][:, 2] if input_dict["labels"][i].shape[1] > 2 else None
+                    target[i]["point2segment"] = input_dict["labels"][i][:,
+                                                                         2] if input_dict["labels"][i].shape[1] > 2 else None
                 if "train" not in mode:
                     target_full = get_instance_masks(
                         [torch.from_numpy(l) for l in original_labels],
@@ -341,6 +407,7 @@ def voxelize(
             target,
             [sample[3] for sample in batch],
         )
+
 
 def get_instance_masks(
     list_labels,
@@ -396,7 +463,7 @@ def get_instance_masks(
                     ][:, 2].unique()
                 ] = True
                 segment_masks.append(segment_mask)
-            
+
             instance_mapping[int(instance_id)] = num_valid_instance
             num_valid_instance += 1
 
@@ -417,7 +484,8 @@ def get_instance_masks(
             segment_masks = torch.stack(segment_masks)
 
         assert task == 'instance_segmentation'
-        l = torch.clamp(label_ids - label_offset, min=0) # clamp to max(1-2, 0) = 0 (chair), max(3-2,0)=1 (table)
+        # clamp to max(1-2, 0) = 0 (chair), max(3-2,0)=1 (table)
+        l = torch.clamp(label_ids - label_offset, min=0)
 
         if list_segments:
             target.append(
@@ -429,7 +497,7 @@ def get_instance_masks(
             )
         else:
             target.append({"labels": l, "masks": masks})
-    
+
     return target
 
 
@@ -470,14 +538,16 @@ def read_axis_align_matrix(file_path):
         for line in f:
             line_content = line.strip()
             if 'axisAlignment' in line_content:
-                axis_align_matrix = [float(x) for x in line_content.strip('axisAlignment = ').split(' ')]
+                axis_align_matrix = [float(x) for x in line_content.strip(
+                    'axisAlignment = ').split(' ')]
                 axis_align_matrix = np.array(axis_align_matrix).reshape((4, 4))
                 break
     assert np.all(np.fabs(axis_align_matrix[3, :3]) < 1e-8)
     return axis_align_matrix
 
-def concatenate_texts_with_separator(tokenizer, raw_texts, max_batch_tokens, num_concat_texts, max_tokens, \
-        raw_texts_poschars, raw_texts_posinsts, raw_texts_type=None, shuffle=False, text_separator='. ', concat=True):
+
+def concatenate_texts_with_separator(tokenizer, raw_texts, max_batch_tokens, num_concat_texts, max_tokens,
+                                     raw_texts_poschars, raw_texts_posinsts, raw_texts_type=None, shuffle=False, text_separator='. ', concat=True):
     assert tokenizer.model_max_length >= max_batch_tokens
     # assert max([len(i) for i in tokenizer(raw_texts).input_ids]) <= max_tokens
 
@@ -485,13 +555,15 @@ def concatenate_texts_with_separator(tokenizer, raw_texts, max_batch_tokens, num
         random_text_indices = np.arange(len(raw_texts))
         np.random.shuffle(random_text_indices)
         raw_texts_remap = np.zeros((len(raw_texts)), dtype=int)
-        raw_texts_remap[random_text_indices] = np.arange(len(random_text_indices))
+        raw_texts_remap[random_text_indices] = np.arange(
+            len(random_text_indices))
     else:
         random_text_indices = list(range(len(raw_texts)))
         raw_texts_remap = np.arange(len(random_text_indices))
 
     if len(raw_texts) > 0:
-        raw_texts_input_ids_length = np.asarray([len(i) for i in tokenizer(raw_texts).input_ids])
+        raw_texts_input_ids_length = np.asarray(
+            [len(i) for i in tokenizer(raw_texts).input_ids])
 
     concat_texts = []
     concat_texts_pos_tokens = []
@@ -510,12 +582,13 @@ def concatenate_texts_with_separator(tokenizer, raw_texts, max_batch_tokens, num
                 concat_texts_type.append(raw_texts_type[label_idx])
             if raw_texts_poschars is not None and len(raw_texts_poschars[label_idx]) > 0:
                 for j, ((beg, end), inst_ids) in enumerate(zip(raw_texts_poschars[label_idx], raw_texts_posinsts[label_idx])):
-                    concat_texts_pos_tokens[-1].append((len(concat_texts), char_id + beg, char_id + end))
+                    concat_texts_pos_tokens[-1].append(
+                        (len(concat_texts), char_id + beg, char_id + end))
                     concat_texts_pos_insts[-1].append(inst_ids)
 
             text += text_separator
             char_id = len(text)
-        
+
             if not concat:
                 concat_texts.append(text)
                 text = ''
@@ -527,12 +600,15 @@ def concatenate_texts_with_separator(tokenizer, raw_texts, max_batch_tokens, num
                     char_id = 0
                     len_concat_compute = 2
                 else:
-                    if len_concat_compute + raw_texts_input_ids_length[ random_text_indices[i + 1] ] - 2 >= max_batch_tokens:
+                    if len_concat_compute + raw_texts_input_ids_length[random_text_indices[i + 1]] - 2 >= max_batch_tokens:
                         # avoid too long tokenizer
-                        if i < len(random_text_indices) - 1 and raw_texts_input_ids_length[ random_text_indices[i + 1] ] >= max_batch_tokens:
+                        if i < len(random_text_indices) - 1 and raw_texts_input_ids_length[random_text_indices[i + 1]] >= max_batch_tokens:
                             while len(tokenizer(raw_texts[random_text_indices[i + 1]] + text_separator).input_ids) >= max_batch_tokens:
-                                num_drop = max_batch_tokens - len(tokenizer(raw_texts[random_text_indices[i + 1]] + text_separator).input_ids) + 1
-                                raw_texts[random_text_indices[i + 1]] = ' '.join( raw_texts[random_text_indices[i + 1]].split(' ')[:-(num_drop + 1)] + ['.'] )
+                                num_drop = max_batch_tokens - \
+                                    len(tokenizer(
+                                        raw_texts[random_text_indices[i + 1]] + text_separator).input_ids) + 1
+                                raw_texts[random_text_indices[i + 1]] = ' '.join(
+                                    raw_texts[random_text_indices[i + 1]].split(' ')[:-(num_drop + 1)] + ['.'])
 
                         concat_texts.append(text)
                         text = ''
@@ -541,9 +617,12 @@ def concatenate_texts_with_separator(tokenizer, raw_texts, max_batch_tokens, num
 
     if len(concat_texts) < num_concat_texts and concat:
         concat_texts += [''] * (num_concat_texts - len(concat_texts))
-    concat_texts_pos_tokens = np.asarray(concat_texts_pos_tokens, dtype=object)[raw_texts_remap[:len(concat_texts_pos_tokens)]]
-    concat_texts_pos_insts = np.asarray(concat_texts_pos_insts, dtype=object)[raw_texts_remap[:len(concat_texts_pos_insts)]]
+    concat_texts_pos_tokens = np.asarray(concat_texts_pos_tokens, dtype=object)[
+        raw_texts_remap[:len(concat_texts_pos_tokens)]]
+    concat_texts_pos_insts = np.asarray(concat_texts_pos_insts, dtype=object)[
+        raw_texts_remap[:len(concat_texts_pos_insts)]]
     if raw_texts_type is not None:
-        concat_texts_type = np.asarray(concat_texts_type, dtype=object)[raw_texts_remap[:len(concat_texts_type)]]
-    
+        concat_texts_type = np.asarray(concat_texts_type, dtype=object)[
+            raw_texts_remap[:len(concat_texts_type)]]
+
     return concat_texts, concat_texts_pos_tokens, concat_texts_pos_insts, concat_texts_type

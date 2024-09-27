@@ -235,24 +235,6 @@ if not osp.exists(lang_reformat_path / '3dllm_format.json'):
         json.dump(data_3dllm_source, f)
     print(f'3D-LLM data: {len(data_3dllm_source)} data items Processed.')
 
-# ---------------------- SQA -----------------------------------------
-if not osp.exists(lang_reformat_path / 'sqa_format.json'):
-    sqa_path = "data/langdata/sqa_task/balanced/sqa_flattened_data.json"
-    with open(sqa_path,"r") as f:
-        sqa_data = json.load(f)
-    sqa_source = []
-    for line in sqa_data:
-        d={}
-        d['scene_id'] = line['scene_id']
-        d['lang_type'] = 'sqa:' + line['split'] + ':' + str(line['answer_type']) + ':' + str(line['anno_id'])
-        d['question'] = line['question']
-        d['answer'] = line['answers']['answer']
-        d['situation'] = line["situation"]
-        sqa_source.append(d)
-    with open(lang_reformat_path / 'sqa_format.json', 'w') as f:
-        json.dump(sqa_source, f)
-    print(f'SQA data: {len(sqa_source)} data items Processed.')
-
 # --------------------- Embodied Plan ---------------------------------
 if not osp.exists(lang_reformat_path / 'embodiedplan_format.json'):
     embodiedplan_source = []
@@ -413,8 +395,3 @@ if not osp.exists(lang_reformat_path / 'global_scene_cap.json'):
 
     print(f'GlobalSceneCaption: {len(filtered_scene_lang_source)} data items Processed.')
 
-
-
-if not osp.exists(lang_reformat_path / 'augmented_sqa_cap.json'):
-    pass
-    print(f'AugmentedSQA: {len(filtered_scene_lang_source)} data items Processed.')

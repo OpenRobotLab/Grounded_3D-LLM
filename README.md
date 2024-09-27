@@ -2,7 +2,7 @@
 
 This repository will release the official implementation of "Grounded 3D-LLM with Referent Token".
 
-> [[`Paper`]](https://arxiv.org/pdf/2405.10370) [[`Arxiv`]](https://arxiv.org/abs/2405.10370) [[`Website`]](https://groundedscenellm.github.io/grounded_3d-llm.github.io/) [[`Data`]](https://mycuhk-my.sharepoint.com/:f:/g/personal/1155113995_link_cuhk_edu_hk/EpGS4c90LVVMvzio0UXgHfoB1u78-WpYaZfTuJj8qCbC4g?e=B2sufx)
+> [[`Paper`]](https://arxiv.org/pdf/2405.10370) [[`Arxiv`]](https://arxiv.org/abs/2405.10370) [[`Website`]](https://groundedscenellm.github.io/grounded_3d-llm.github.io/) [[`Data`]](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata)
 
 ## Abstract
 
@@ -10,89 +10,107 @@ Prior studies on 3D scene comprehension have primarily developed specialized mod
 
 ![image-20240515195822834](./README.assets/image-20240515195822834.png)
 
-## Main Results
+## Grounded Scene Caption Data Visualization and Generation
 
-<p>
-    <img src="./README.assets/results.png" alt="Generalist comparison">
-    <em>Evaluation of 3D scene-level LMMs as a generalist.</em>
-</p>
+Please refer to the [data visualization page](./doc/data_vis.md) for detailed instructions on the minimal setup for visualizing the grounded scene caption dataset.
 
-<p>
-    <img src="./README.assets/result_clasp.png" alt="CLASP comparison">
-    <em>Comparison of CLASP with previous referring and detection methods.</em>
-</p>
+## Model Training
 
-## Grounded Scene Caption Data Visualization
+#### Step 1: Environment setups and dataset preparation.
+Grounded 3D-LLM is trained using 4 or 8 NVIDIA Tesla A100 GPUs. Please refer to the [installation page](./doc/install.md) for detailed installation scripts for model training.
 
-#### Step 1: Setup the environment.
+Please download all the scene-language datasets the from [HuggingFace](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/tree/main). The datasets are listed as follows:
+
+|  Dataset | # for Train | # for Eval |
+| :------: | :----: | :----: | 
+| [ScanRefer](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/scanrefer_format.json) |36639 | 9503 | 
+| [Scan2Cap](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/scanrefer_format.json) | 36639 | 9503 |
+| [ScanQA](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/scanqa_format.json) | 26516 | 9402 | 
+| [Object-Description](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/objectdescription_format.json) |  28197 | 7912 |
+| [GroundedSceneCaption](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/groundedscenecaption_format.json) |  84301 | -- |
+| [EmbodiedPlanning](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/embodiedplan_format.json) |  3500 | -- |
+| [EmbodiedDialogue](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/embodieddialog_format.json) |  129799 | -- |
+| [GlobalSceneCaption](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/global_scene_cap_format.json) | 4065 | -- |
+| [3D-LLM](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/3dllm_format.json) | 27627 | -- |
+| [Alpaca](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/blob/main/langdata/alpaca_data.json) | 51865 | -- |
+
+Please download the pretrained weights from [HuggingFace](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/tree/main/pretrained) and place them in `$ROOT_PATH/pretrained/`.
+
+Please download the pretrained LLM weights ([Tiny-Vicuna-1B](https://huggingface.co/Jiayi-Pan/Tiny-Vicuna-1B)) and store them in `$ROOT_PATH/pretrained/llm_weight/Tiny-Vicuna-1B/`
+
+If you would like to utilize our pretrained model checkpoints, they can be obtained from [HuggingFace](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/tree/main/saved/). Please save these in the checkpoint directory located at `$ROOT_PATH/saved`.
+
+|  Steps  | Model Checkpoints  |
+| :-------: | :------: |
+| 1  |  [Mask3D-CLIP](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/tree/main/saved/step1_mask3d_clip_4GPUS)  | 
+| 2  |  [Mask3D-CLASP](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/tree/main/saved/step2_mask3d_lang_4GPUS) | 
+| 3  | [Grounded 3D-LLM](https://huggingface.co/datasets/chenyilun95/Grounded_3D-LLM_data/tree/main/saved/step3_mask3d_lang_4GPUS) |  
+
+After completing the downloads, the root folder should be organized as follows:
+
 ```
-pip install -r requirements.txt
-# Requires Open3D library to process the ScanNet dataset (e.g. open3d==0.9.0)
-```
-
-#### Step 2: Data preparation
-
-You can download processed ScanNet(~7G) from [our Huggingface repository]( https://huggingface.co/datasets/ShuaiYang03/Grounded_3D_LLM_with_Referent_Tokens_dataset) or prepare it by yourself.
-
-1. Download the ScanNet dataset from the official [ScanNet website](http://www.scan-net.org/).
-```bash
-ln -s ScanNet_dataset ./data/rawscannet
-```
-
-2. Get ScanNet official repo for pre-processing.
-```bash
-mkdir third_party
-cd third_party
-git clone https://github.com/ScanNet/ScanNet.git
-cd ScanNet/Segmentator
-git checkout 3e5726500896748521a6ceb81271b0f5b2c0e7d2
-make
-```
-
-3. Pre-process the scannet dataset as [Mask3D](https://github.com/JonasSchult/Mask3D).
-```bash
-python -m datasets.preprocessing.scannet_preprocessing preprocess \
---data_dir="./data/rawscannet" \
---save_dir="data/processed/scannet200" \
---git_repo="third_party/ScanNet" \
---scannet200=true
-```
-
-After preprocessing, please download the [grounded scene caption data](https://mycuhk-my.sharepoint.com/:f:/g/personal/1155113995_link_cuhk_edu_hk/EpGS4c90LVVMvzio0UXgHfoB1u78-WpYaZfTuJj8qCbC4g?e=B2sufx) and put it into the data folder as:
-```bash
-|-- 
-|  |-- data
-|     |-- rawscannet
-|     |-- processed
-|        |-- scannet200
-|  |-- langdata
-|     |-- groundedscenecaption_format.json
-```
-
-#### Step 3: Data visualization.
-1. Run the visualization script to generate colorful point clouds. 
-```bash
-cd data_visualization
-python visualize_grounded_text.py --datapath ../data/processed/scannet200 --langpath ../data/langdata/groundedscenecaption_format.json --count 10 --scene_id scene0000_00
-```
-This command accepts raw point cloud data and language annotations, displaying 10 captions in the scene `scene0000_00`.
-
-2. Visualize the grounded scene caption and the respective scene point clouds in the http server.
-```bash
-cd visualizer
-python -m http.server 7890
+ROOT_PATH
+├── data                            # data
+│   ├── langdata
+│   │   │── groundedscenecaption_format.json
+│   │   │── scanrefer_format.json
+│   │   │── scanqa_format.json
+│   │   │── ...
+│   ├── processed
+│   │── rawscannet
+│   │   │── scans
+│   │   │── scannetv2-labels.combined.tsv
+│── pretrained                      # pretrained weights for model training
+│   │── bert-base-uncased           # bert pretrained weights
+│   │── label_clip_features.pth     # clip's text features for scannet-200 class names
+│   │── llm_weight
+│   │   │── Tiny-Vicuna-1B          # pretrained weights from https://huggingface.co/Jiayi-Pan/Tiny-Vicuna-1B
+│── saved                           # model checkpoints saved path
+│   │── step1_mask3d_clip_4GPUS
+│   │── step2_mask3d_lang_4GPUS
+│   │── step3_mask3d_lang_4GPUS
 ```
 
-## Instruction data generation for Embodied Dialogue and Planning
-Please follow the README instructions in the data_gen/ folder to obtain embodied dialogue and planning data with grounding annotation.
+#### Step 2: Pre-train the Mask3D detector:
+```
+bash final_scripts/step1_pretrain_detector.sh
+```
 
-## ToDo List (Stay tuned)
+#### Step 3:  After training the detector, pre-train the detector using Contrastive Language-Scene Pre-training:
+```
+bash final_scripts/step2_pretrain_3d-clasp.sh
+```
+
+#### Step 3: After contrastive pre-training, train the entire Grounded 3D-LLM:
+```
+bash final_scripts/step3_train_grounded3dllm.sh
+```
+
+The model checkpoints will be saved in `saved/step3_mask3d_lang_4GPUS/last-checkpoint.pth`, and the inference results will be stored in `saved/step3_mask3d_lang_4GPUS/${TIMESTAMP}/`.
+
+## Model Evaluation
+
+To evaluate all the respective results, run the following command:
+```
+bash final_scripts/test_llm.sh ./saved/step3_mask3d_lang_4GPUS/${TIMESTAMP}/
+```
+
+## Demo
+
+To interact with Grounded 3D-LLM via the demo chat, first run the model inference and ensure that the `scene_features` are saved in `saved/step3_mask3d_lang_4GPUS/scene_features`. After that, launch the gradio demo chat by running the following command:
+```
+bash web_chat_demo/web_chat_demo.sh 
+```
+Please note that the visualization of the related segmentation masks is not yet supported in the Gradio demo.
+
+## ToDo List
 
 - [x] Release Grouded Scene Caption data (ScanNet).
 - [x] Release data visualizer.
 - [x] Release data generation code. 
-- [ ] Release pre-trained CLASP.
-- [ ] Release Grounded 3D-LLM.
+- [x] Release pre-trained checkpoints.
+- [x] Release Grounded 3D-LLM training and evaluation.
+- [ ] Demo supports mask visualization.
 
 ## Acknowledgement
 Many thanks to the following open-source projects:
