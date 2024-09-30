@@ -10,7 +10,7 @@ Prior studies on 3D scene comprehension have primarily developed specialized mod
 
 ![image-20240515195822834](./README.assets/image-20240515195822834.png)
 
-## Grounded Scene Caption Data Visualization and Generation
+## Grounded Scene Caption Data Visualization
 
 Please refer to the [data visualization page](./doc/data_vis.md) for detailed instructions on the minimal setup for visualizing the grounded scene caption dataset.
 
