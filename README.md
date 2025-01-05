@@ -81,18 +81,20 @@ bash final_scripts/step1_pretrain_detector.sh
 bash final_scripts/step2_pretrain_3d-clasp.sh
 ```
 
-#### Step 3: After contrastive pre-training, train the entire Grounded 3D-LLM:
+#### Step 3: After contrastive pre-training, train and inference the entire Grounded 3D-LLM:
 ```
 bash final_scripts/step3_train_grounded3dllm.sh
 ```
 
 The model checkpoints will be saved in `saved/step3_mask3d_lang_4GPUS/last-checkpoint.pth`, and the inference results will be stored in `saved/step3_mask3d_lang_4GPUS/${TIMESTAMP}/`.
 
+Note that if you want to run the inference, simply comment out the training command in these scripts.
+
 ## Model Evaluation
 
 To evaluate all the respective results, run the following command:
 ```
-bash final_scripts/test_llm.sh ./saved/step3_mask3d_lang_4GPUS/${TIMESTAMP}/
+bash final_scripts/eval_llm.sh ./saved/step3_mask3d_lang_4GPUS/${TIMESTAMP}/
 ```
 
 ## Demo

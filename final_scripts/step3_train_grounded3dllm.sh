@@ -26,3 +26,20 @@ general.timestamp=$(date +"%m-%d-%H-%M-%S") \
 general.filter_scene00=false \
 general.topk_per_image=${CURR_TOPK} \
 general.llm_config=conf/llm/tiny_vicuna_len512.json 
+
+# TEST
+python main_run.py \
+general.experiment_name="step3_${MODEL}_${NUM_GPUS}GPUS" \
+general.project_name="scannet200" \
+general.gpus=${NUM_GPUS} \
+data=${DATA} \
+model=${MODEL}  \
+data.batch_size=5 \
+data.num_workers=4 \
+trainer=trainer50 \
+optimizer.lr=0.0008 \
+general.train_mode=false \
+general.timestamp=$(date +"%m-%d-%H-%M-%S") \
+general.filter_scene00=false \
+general.topk_per_image=${CURR_TOPK} \
+general.llm_config=conf/llm/tiny_vicuna_len512.json 
